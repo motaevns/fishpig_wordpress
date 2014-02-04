@@ -182,22 +182,41 @@ abstract class Fishpig_Wordpress_Model_Resource_Post_Collection_Abstract extends
 	 */
 	public function addSearchStringFilter(array $words, array $fields, $operator = 'OR')
 	{
-		if (count($words) > 0) {
-			$read = Mage::helper('wordpress/database')->getReadAdapter();
-			$where = array();
-	
-			foreach($fields as $field) {
-				foreach($words as $word) {
-					$where[] = $read->quoteInto("{$field} LIKE ? ", "%{$word}%");
-				}
-			}
-	
-			$this->getSelect()->where(implode(" {$operator} ", $where));
-		}
-		else {
+        //original in wordpress
+//        AND (
+//            ((wp_posts.post_title LIKE '%New%') OR (wp_posts.post_content LIKE '%New%'))
+//        AND ((wp_posts.post_title LIKE '%Post%') OR (wp_posts.post_content LIKE '%Post%'))
+//        AND ((wp_posts.post_title LIKE '%2%') OR (wp_posts.post_content LIKE '%2%'))
+
+        if (count($words) > 0) {
+            $tmpWords = array();
+            foreach ($words as $word) {
+                $tmpWords[] = array('like' => '%' . $word . '%') ;
+            }
+            $words= $tmpWords;
+    //			$read = Mage::helper('wordpress/database')->getReadAdapter();
+    //			$where = array();
+
+    //			foreach($fields as $field) {
+
+
+            foreach($words as $word) {
+                $fieldCondition = array();
+                foreach($fields as $field) {
+                    $fieldCondition[] = $word;
+                }
+                $this->addFieldToFilter($fields, $fieldCondition);
+    //					$where[] = $read->quoteInto("{$field} LIKE ? ", "%{$word}%");
+            }
+    //			}
+
+    //			$this->getSelect()->where(implode(" {$operator} ", $where));
+		} else {
 			$this->getSelect()->where('1=2');
 		}
-		
+
+        $this->addFieldToFilter('post_password', array('eq' => ''));
+
 		return $this;
 	}
 	
